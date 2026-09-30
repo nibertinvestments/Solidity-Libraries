@@ -1,18 +1,33 @@
 # Web3 Solidity Libraries
 
-A production-oriented Solidity library repository for secure, reusable Web3 contracts. The project is organized around modular, battle-tested primitives that can be imported into dApps, vaults, governance systems, token contracts, and protocol infrastructure.
+<p align="center">
+  <img alt="Solidity" src="https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity&logoColor=white" />
+  <img alt="Hardhat" src="https://img.shields.io/badge/Hardhat-2.x-FFF0B3?logo=hardhat&logoColor=black" />
+  <img alt="License" src="https://img.shields.io/badge/License-GPL--2.0-blue.svg" />
+</p>
 
-This repository includes standalone libraries, reference implementations, and a deployment-ready registry pattern for managing reusable library metadata in a protocol ecosystem.
+Reusable, security-oriented Solidity primitives for protocol infrastructure, token systems, governance, access control, and production-grade dApp development.
+
+This repository packages common smart contract building blocks into a modular library collection with a registry pattern for library metadata and versioning.
 
 ## Why this repo exists
 
-The goal is to provide a clean, auditable, and composable foundation for Solidity development without forcing projects to reimplement common utilities. The libraries emphasize:
+Smart-contract development repeatedly needs the same foundational components: arithmetic safety, address validation, token transfer guards, role-based access control, and protocol operating patterns. Instead of rebuilding these patterns in every project, this repository centralizes them into composable libraries and deployment-ready examples.
 
-- arithmetic safety and input validation
-- reusable access and authorization patterns
-- token safety helpers for ERC20 flows
-- modular architecture for upgradeable and governance-heavy systems
-- production-oriented deployment and testing workflows
+## What is included
+
+- `Web3Math` — safe arithmetic helpers, comparisons, min/max logic, and numeric guards
+- `Web3Array` — array membership, summation, deduplication, and index utilities
+- `Web3Strings` — string normalization, concatenation, slice operations, and formatting helpers
+- `Web3Address` — zero-address checks, contract detection, and validation utilities
+- `Web3Time` — timestamp and duration helpers for deadlines, windows, and schedules
+- `Web3SafeTransfer` and `Web3SafeERC20` — secure ERC20 transfer and allowance flows
+- `Web3AccessControl` and `Web3RoleBasedAccess` — lightweight role/permission systems
+- `Web3ReentrancyGuard`, `Web3RateLimiter`, and `Web3InputValidator` — defensive security patterns
+- `Web3MultiSig`, `Web3Timelock`, and `Web3QuadraticVoting` — governance-oriented patterns
+- `Web3ERC20`, `Web3ERC721`, `Web3ERC1155`, `Web3DynamicNFT` — token and NFT templates
+- `Web3Staking` and `Web3Vault` — finance utility contracts
+- `Web3LibraryDatabase` — registry contract for versioned library metadata
 
 ## Repository structure
 
@@ -20,7 +35,7 @@ The goal is to provide a clean, auditable, and composable foundation for Solidit
 .
 ├── contracts/
 │   ├── examples/
-│   │   └── Web3LibraryConsumer.sol
+│   │   ├── Web3LibraryConsumer.sol
 │   │   └── Web3LibraryDatabase.sol
 │   ├── finance/
 │   │   ├── Web3Staking.sol
@@ -75,42 +90,9 @@ The goal is to provide a clean, auditable, and composable foundation for Solidit
 ├── package.json
 ├── LICENSE
 ├── README.md
-└── .gitignore
+├── .gitignore
+└── .solhint.json
 ```
-
-## Library catalog
-
-### Core libraries
-
-- `Web3Math` — overflow-safe arithmetic, min/max helpers, percentage utilities, and numeric guards
-- `Web3Array` — membership checks, summation, deduplication, sorting support, and array utilities
-- `Web3Strings` — string normalization, concatenation, substring utilities, and formatting helpers
-- `Web3Address` — zero-address checks, contract detection, and address-based validation patterns
-- `Web3Time` — timestamp comparisons, deadlines, durations, and scheduling helpers
-
-### Safety and token primitives
-
-- `Web3SafeTransfer` — secure ERC20 transfer wrappers
-- `Web3SafeERC20` — safer interaction patterns for token transfer semantics and allowances
-- `Web3ReentrancyGuard` — reentrancy protection patterns
-- `Web3RateLimiter` — request-throttling and usage control utilities
-- `Web3InputValidator` — argument validation helpers for user-controlled inputs
-
-### Access control and governance
-
-- `Web3AccessControl` — lightweight role management and authorization support
-- `Web3RoleBasedAccess` — role-based access patterns for protocol control
-- `Web3MultiSig` — multisig wallet and approval patterns
-- `Web3Timelock` — delayed execution for governance and protocol operations
-- `Web3QuadraticVoting` — voting-weight and proposal coordination patterns
-
-### Contracts and system modules
-
-- `Web3LibraryDatabase` — registry contract for storing versioned library metadata
-- `Web3ERC20`, `Web3ERC721`, `Web3ERC1155` — standardized token implementations
-- `Web3DynamicNFT` — dynamic NFT pattern examples
-- `Web3ProxyUpgradeable` — upgradeable proxy patterns
-- `Web3Staking`, `Web3Vault` — finance-oriented contract examples
 
 ## Quick start
 
@@ -120,13 +102,13 @@ Install dependencies:
 npm install
 ```
 
-Compile the contracts:
+Compile the project:
 
 ```bash
 npx hardhat compile
 ```
 
-Run the automated tests:
+Run the test suite:
 
 ```bash
 npx hardhat test
@@ -165,9 +147,9 @@ contract Treasury {
 }
 ```
 
-## Registry usage
+## Registry pattern
 
-The repository includes a `Web3LibraryDatabase` pattern to track library metadata and versioning. This is useful for protocol registries, developer tooling, or any application that needs to expose a trusted library catalog.
+The project includes a `Web3LibraryDatabase` contract for tracking library metadata, versioning, and discovery. This is useful for developer tooling, app-specific registries, and multi-module protocol systems.
 
 ```solidity
 Web3LibraryDatabase db = Web3LibraryDatabase(0x...);
@@ -182,22 +164,44 @@ db.registerLibrary(
 );
 ```
 
-## Security notes
+## Security design principles
 
-These contracts are structured for secure production use and emphasize:
+This repository is structured around secure-by-default smart-contract patterns:
 
-- strict validation of input and address values
-- defensive arithmetic patterns
-- isolated library responsibilities and single-purpose contracts
-- explicit role-based access control patterns
-- token-transfer safety checks and allowance handling
+- strict validation of user and protocol input
+- defensive arithmetic and bounds checking
+- safe token-transfer semantics and allowance handling
+- explicit access control and authorization boundaries
+- isolated library responsibilities and composable interfaces
+- deployment configuration optimized for deterministic Hardhat builds
 
-## Deployment and environment
+## Deployment environment
 
-The project is configured for Hardhat and supports localhost deployment out of the box. The configuration in `hardhat.config.js` uses Solidity 0.8.24 with optimizer settings enabled for deployment-oriented builds.
+The project is configured for Hardhat and targets Solidity `0.8.24` with optimizer settings enabled for deployable contract builds.
+
+```javascript
+require("@nomicfoundation/hardhat-toolbox");
+
+module.exports = {
+  solidity: {
+    version: "0.8.24",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      },
+      viaIR: true
+    }
+  },
+  networks: {
+    hardhat: {},
+    localhost: {
+      url: "http://127.0.0.1:8545"
+    }
+  }
+};
+```
 
 ## License
 
-This project is licensed under the GNU General Public License v2.0.
-
-See `LICENSE` for full licensing terms.
+This project is licensed under the GNU General Public License v2.0. See `LICENSE` for the full licensing text.
