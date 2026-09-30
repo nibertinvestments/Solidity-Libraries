@@ -1,16 +1,17 @@
 pragma solidity ^0.8.24;
 
+import "../interfaces/IERC20Minimal.sol";
+import "../libraries/Web3SafeERC20.sol";
+
 contract Web3Staking {
+    using Web3SafeERC20 for IERC20Minimal;
+
     error Web3Staking__InvalidAmount();
     error Web3Staking__InsufficientStake();
     error Web3Staking__Unauthorized();
+    error Web3Staking__InvalidToken();
 
-    interface IERC20 {
-        function transferFrom(address from, address to, uint256 amount) external returns (bool);
-        function transfer(address to, uint256 amount) external returns (bool);
-    }
-
-    IERC20 public stakingToken;
+    IERC20Minimal public immutable stakingToken;
     address public owner;
     uint256 public rewardRate;
     uint256 public constant PRECISION = 1e18;
@@ -27,10 +28,12 @@ contract Web3Staking {
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
     event RewardClaimed(address indexed user, uint256 amount);
+    event RewardRateUpdated(uint256 previousRate, uint256 newRate);
 
-    constructor(address _stakingToken, uint256 _rewardRate) {
-        stakingToken = IERC20(_stakingToken);
-        rewardRate = _rewardRate;
+    constructor(address token, uint256 initialRewardRate) {
+        if (token == address(0) || token.code.length == 0) revert Web3Staking__InvalidToken();
+        stakingToken = IERC20Minimal(token);
+        rewardRate = initialRewardRate;
         owner = msg.sender;
     }
 
@@ -41,72 +44,48 @@ contract Web3Staking {
 
     function stake(uint256 amount) external {
         if (amount == 0) revert Web3Staking__InvalidAmount();
-
         _updateRewards(msg.sender);
-
-        if (!stakingToken.transferFrom(msg.sender, address(this), amount)) revert Web3Staking__InvalidAmount();
-
-        unchecked {
-            stakes[msg.sender].amount += amount;
-            totalStaked += amount;
-        }
-
+        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        stakes[msg.sender].amount += amount;
+        totalStaked += amount;
         stakes[msg.sender].timestamp = block.timestamp;
         emit Staked(msg.sender, amount);
     }
 
     function unstake(uint256 amount) external {
-        if (amount == 0) revert Web3Staking__InvalidAmount();
-        if (stakes[msg.sender].amount < amount) revert Web3Staking__InsufficientStake();
-
+        if (amount == 0 || stakes[msg.sender].amount < amount) revert Web3Staking__InsufficientStake();
         _updateRewards(msg.sender);
-
-        if (!stakingToken.transfer(msg.sender, amount)) revert Web3Staking__InvalidAmount();
-
-        unchecked {
-            stakes[msg.sender].amount -= amount;
-            totalStaked -= amount;
-        }
-
+        stakes[msg.sender].amount -= amount;
+        totalStaked -= amount;
+        stakingToken.safeTransfer(msg.sender, amount);
         emit Unstaked(msg.sender, amount);
     }
 
     function claimRewards() external {
         _updateRewards(msg.sender);
-
         uint256 rewards = stakes[msg.sender].rewards;
         if (rewards == 0) revert Web3Staking__InvalidAmount();
-
         stakes[msg.sender].rewards = 0;
-        if (!stakingToken.transfer(msg.sender, rewards)) revert Web3Staking__InvalidAmount();
-
+        stakingToken.safeTransfer(msg.sender, rewards);
         emit RewardClaimed(msg.sender, rewards);
     }
 
-    function _updateRewards(address user) private {
-        uint256 stakedAmount = stakes[user].amount;
-        if (stakedAmount == 0) return;
-
-        uint256 timeElapsed = block.timestamp - stakes[user].timestamp;
-        uint256 newRewards = (stakedAmount * rewardRate * timeElapsed) / (365 days * PRECISION);
-
-        unchecked {
-            stakes[user].rewards += newRewards;
-        }
-        stakes[user].timestamp = block.timestamp;
+    function setRewardRate(uint256 newRate) external onlyOwner {
+        emit RewardRateUpdated(rewardRate, newRate);
+        rewardRate = newRate;
     }
 
     function getClaimableRewards(address user) external view returns (uint256) {
-        uint256 stakedAmount = stakes[user].amount;
-        if (stakedAmount == 0) return stakes[user].rewards;
-
-        uint256 timeElapsed = block.timestamp - stakes[user].timestamp;
-        uint256 newRewards = (stakedAmount * rewardRate * timeElapsed) / (365 days * PRECISION);
-
-        return stakes[user].rewards + newRewards;
+        StakeRecord memory record = stakes[user];
+        if (record.amount == 0) return record.rewards;
+        return record.rewards + (record.amount * rewardRate * (block.timestamp - record.timestamp)) / (365 days * PRECISION);
     }
 
-    function setRewardRate(uint256 newRate) external onlyOwner {
-        rewardRate = newRate;
+    function _updateRewards(address user) private {
+        StakeRecord storage record = stakes[user];
+        if (record.amount != 0) {
+            record.rewards += (record.amount * rewardRate * (block.timestamp - record.timestamp)) / (365 days * PRECISION);
+        }
+        record.timestamp = block.timestamp;
     }
 }

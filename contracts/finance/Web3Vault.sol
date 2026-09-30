@@ -1,29 +1,30 @@
 pragma solidity ^0.8.24;
 
+import "../interfaces/IERC20Minimal.sol";
+import "../libraries/Web3SafeERC20.sol";
+
 contract Web3Vault {
+    using Web3SafeERC20 for IERC20Minimal;
+
     error Web3Vault__InvalidAmount();
     error Web3Vault__Unauthorized();
     error Web3Vault__TransferFailed();
+    error Web3Vault__InvalidToken();
 
-    interface IERC20 {
-        function transferFrom(address from, address to, uint256 amount) external returns (bool);
-        function transfer(address to, uint256 amount) external returns (bool);
-        function balanceOf(address account) external view returns (uint256);
-    }
-
-    address public owner;
-    address public vault;
-    mapping(address => uint256) public tokenBalances;
+    address public immutable owner;
+    mapping(address => mapping(address => uint256)) public tokenBalances;
     mapping(address => bool) public allowedTokens;
+    mapping(address => uint256) public ethBalances;
 
     event TokenDeposited(address indexed token, address indexed user, uint256 amount);
     event TokenWithdrawn(address indexed token, address indexed user, uint256 amount);
+    event ETHDeposited(address indexed user, uint256 amount);
+    event ETHWithdrawn(address indexed user, uint256 amount);
     event TokenAllowed(address indexed token);
     event TokenDisallowed(address indexed token);
 
-    constructor(address _vault) {
+    constructor() {
         owner = msg.sender;
-        vault = _vault;
     }
 
     modifier onlyOwner() {
@@ -37,6 +38,7 @@ contract Web3Vault {
     }
 
     function allowToken(address token) external onlyOwner {
+        if (token == address(0) || token.code.length == 0) revert Web3Vault__InvalidToken();
         allowedTokens[token] = true;
         emit TokenAllowed(token);
     }
@@ -48,36 +50,34 @@ contract Web3Vault {
 
     function deposit(address token, uint256 amount) external onlyAllowed(token) {
         if (amount == 0) revert Web3Vault__InvalidAmount();
-
-        IERC20 erc20 = IERC20(token);
-        if (!erc20.transferFrom(msg.sender, address(this), amount)) revert Web3Vault__TransferFailed();
-
-        unchecked {
-            tokenBalances[token] += amount;
-        }
+        IERC20Minimal(token).safeTransferFrom(msg.sender, address(this), amount);
+        tokenBalances[token][msg.sender] += amount;
         emit TokenDeposited(token, msg.sender, amount);
     }
 
     function withdraw(address token, uint256 amount) external onlyAllowed(token) {
-        if (amount == 0) revert Web3Vault__InvalidAmount();
-        if (tokenBalances[token] < amount) revert Web3Vault__InvalidAmount();
-
-        IERC20 erc20 = IERC20(token);
-        if (!erc20.transfer(msg.sender, amount)) revert Web3Vault__TransferFailed();
-
-        unchecked {
-            tokenBalances[token] -= amount;
-        }
+        if (amount == 0 || tokenBalances[token][msg.sender] < amount) revert Web3Vault__InvalidAmount();
+        tokenBalances[token][msg.sender] -= amount;
+        IERC20Minimal(token).safeTransfer(msg.sender, amount);
         emit TokenWithdrawn(token, msg.sender, amount);
     }
 
-    function getBalance(address token) external view returns (uint256) {
-        return tokenBalances[token];
+    function depositETH() external payable {
+        if (msg.value == 0) revert Web3Vault__InvalidAmount();
+        ethBalances[msg.sender] += msg.value;
+        emit ETHDeposited(msg.sender, msg.value);
+    }
+
+    function withdrawETH(uint256 amount) external {
+        if (amount == 0 || ethBalances[msg.sender] < amount) revert Web3Vault__InvalidAmount();
+        ethBalances[msg.sender] -= amount;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        if (!success) revert Web3Vault__TransferFailed();
+        emit ETHWithdrawn(msg.sender, amount);
     }
 
     receive() external payable {
-        unchecked {
-            tokenBalances[address(0)] += msg.value;
-        }
+        ethBalances[msg.sender] += msg.value;
+        emit ETHDeposited(msg.sender, msg.value);
     }
 }

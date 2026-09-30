@@ -24,46 +24,28 @@ contract Web3Timelock {
     event TransactionExecuted(bytes32 indexed txHash);
     event LockPeriodChanged(uint256 newLockPeriod);
 
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() { owner = msg.sender; }
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Web3Timelock__Unauthorized();
         _;
     }
 
-    function queueTransaction(
-        address target,
-        uint256 value,
-        bytes calldata data
-    ) external onlyOwner returns (bytes32) {
-        bytes32 txHash = keccak256(abi.encode(target, value, data, block.timestamp));
-
-        transactions[txHash] = QueuedTransaction({
-            target: target,
-            value: value,
-            data: data,
-            queuedTime: block.timestamp,
-            executed: false
-        });
-
+    function queueTransaction(address target, uint256 value, bytes calldata data) external onlyOwner returns (bytes32) {
+        bytes32 txHash = keccak256(abi.encode(target, value, data, block.timestamp, queuedHashes.length));
+        transactions[txHash] = QueuedTransaction(target, value, data, block.timestamp, false);
         queuedHashes.push(txHash);
         emit TransactionQueued(txHash, target, value, data);
         return txHash;
     }
 
     function executeTransaction(bytes32 txHash) external onlyOwner {
-        if (transactions[txHash].queuedTime == 0) revert Web3Timelock__TransactionNotQueued();
-        if (transactions[txHash].executed) revert Web3Timelock__TransactionNotQueued();
-        if (block.timestamp < transactions[txHash].queuedTime + lockPeriod) revert Web3Timelock__LockPeriodNotPassed();
-
-        QueuedTransaction storage tx = transactions[txHash];
-        tx.executed = true;
-
-        (bool success, ) = tx.target.call{value: tx.value}(tx.data);
+        QueuedTransaction storage queued = transactions[txHash];
+        if (queued.queuedTime == 0 || queued.executed) revert Web3Timelock__TransactionNotQueued();
+        if (block.timestamp < queued.queuedTime + lockPeriod) revert Web3Timelock__LockPeriodNotPassed();
+        queued.executed = true;
+        (bool success, ) = queued.target.call{value: queued.value}(queued.data);
         if (!success) revert Web3Timelock__ExecutionFailed();
-
         emit TransactionExecuted(txHash);
     }
 
@@ -72,7 +54,5 @@ contract Web3Timelock {
         emit LockPeriodChanged(newLockPeriod);
     }
 
-    function getQueuedTransactions() external view returns (bytes32[] memory) {
-        return queuedHashes;
-    }
+    receive() external payable {}
 }
