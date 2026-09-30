@@ -1,10 +1,10 @@
 pragma solidity ^0.8.24;
 
-import "../interfaces/IERC20Minimal.sol";
+import "../interfaces/IERC20.sol";
 import "../libraries/Web3SafeERC20.sol";
 
 contract Web3Vault {
-    using Web3SafeERC20 for IERC20Minimal;
+    using Web3SafeERC20 for address;
 
     error Web3Vault__InvalidAmount();
     error Web3Vault__Unauthorized();
@@ -23,9 +23,7 @@ contract Web3Vault {
     event TokenAllowed(address indexed token);
     event TokenDisallowed(address indexed token);
 
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() { owner = msg.sender; }
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Web3Vault__Unauthorized();
@@ -50,15 +48,26 @@ contract Web3Vault {
 
     function deposit(address token, uint256 amount) external onlyAllowed(token) {
         if (amount == 0) revert Web3Vault__InvalidAmount();
-        IERC20Minimal(token).safeTransferFrom(msg.sender, address(this), amount);
-        tokenBalances[token][msg.sender] += amount;
-        emit TokenDeposited(token, msg.sender, amount);
+
+        uint256 balanceBefore = token.balanceOf(address(this));
+        if (!token.safeTransferFrom(msg.sender, address(this), amount)) {
+            revert Web3Vault__TransferFailed();
+        }
+        uint256 balanceAfter = token.balanceOf(address(this));
+        uint256 actualAmount = balanceAfter - balanceBefore;
+
+        if (actualAmount == 0) revert Web3Vault__TransferFailed();
+        tokenBalances[token][msg.sender] += actualAmount;
+        emit TokenDeposited(token, msg.sender, actualAmount);
     }
 
     function withdraw(address token, uint256 amount) external onlyAllowed(token) {
         if (amount == 0 || tokenBalances[token][msg.sender] < amount) revert Web3Vault__InvalidAmount();
         tokenBalances[token][msg.sender] -= amount;
-        IERC20Minimal(token).safeTransfer(msg.sender, amount);
+
+        if (!token.safeTransfer(msg.sender, amount)) {
+            revert Web3Vault__TransferFailed();
+        }
         emit TokenWithdrawn(token, msg.sender, amount);
     }
 

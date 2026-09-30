@@ -1,48 +1,6 @@
 pragma solidity ^0.8.24;
 
-interface IERC1155 {
-    event TransferSingle(
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256 id,
-        uint256 value
-    );
-    event TransferBatch(
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256[] ids,
-        uint256[] values
-    );
-    event ApprovalForAll(address indexed account, address indexed operator, bool approved);
-    event URI(string value, uint256 indexed id);
-
-    function balanceOf(address account, uint256 id) external view returns (uint256);
-    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);
-    function setApprovalForAll(address operator, bool approved) external;
-    function isApprovedForAll(address account, address operator) external view returns (bool);
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
-    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
-}
-
-interface IERC1155Receiver {
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external returns (bytes4);
-
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    ) external returns (bytes4);
-}
+import "../interfaces/IERC1155.sol";
 
 contract Web3ERC1155 is IERC1155 {
     error Web3ERC1155__InvalidAddress();
@@ -55,8 +13,6 @@ contract Web3ERC1155 is IERC1155 {
     mapping(uint256 => mapping(address => uint256)) private _balances;
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    event URI(string value, uint256 indexed id);
-
     function balanceOf(address account, uint256 id) public view returns (uint256) {
         if (account == address(0)) revert Web3ERC1155__InvalidAddress();
         return _balances[id][account];
@@ -64,7 +20,6 @@ contract Web3ERC1155 is IERC1155 {
 
     function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) public view returns (uint256[] memory) {
         if (accounts.length != ids.length) revert Web3ERC1155__LengthMismatch();
-
         uint256[] memory batchBalances = new uint256[](accounts.length);
         for (uint256 i = 0; i < accounts.length; ++i) {
             batchBalances[i] = balanceOf(accounts[i], ids[i]);
@@ -136,7 +91,6 @@ contract Web3ERC1155 is IERC1155 {
     function batchMint(address to, uint256[] calldata ids, uint256[] calldata amounts) internal {
         if (to == address(0)) revert Web3ERC1155__InvalidAddress();
         if (ids.length != amounts.length) revert Web3ERC1155__LengthMismatch();
-
         for (uint256 i = 0; i < ids.length; ++i) {
             unchecked {
                 _balances[ids[i]][to] += amounts[i];

@@ -5,6 +5,7 @@ contract Web3Oracle {
     error Web3Oracle__InvalidPrice();
     error Web3Oracle__StalePrice();
     error Web3Oracle__InvalidAsset();
+    error Web3Oracle__NonMonotonicUpdate();
 
     struct PriceData {
         uint256 price;
@@ -36,6 +37,8 @@ contract Web3Oracle {
 
     function updatePrice(bytes32 assetId, uint256 price, uint8 decimals) external onlyOwner {
         if (assetId == bytes32(0) || price == 0 || decimals > 36) revert Web3Oracle__InvalidPrice();
+        PriceData memory previous = _prices[assetId];
+        if (previous.updatedAt > 0 && previous.updatedAt >= block.timestamp) revert Web3Oracle__NonMonotonicUpdate();
         _prices[assetId] = PriceData(price, block.timestamp, decimals);
         emit PriceUpdated(assetId, price, decimals, block.timestamp);
     }

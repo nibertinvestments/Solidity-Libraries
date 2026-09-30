@@ -3,27 +3,28 @@ pragma solidity ^0.8.24;
 library Web3SafeERC20 {
     error Web3SafeERC20__CallFailed();
 
-    function safeTransfer(IERC20Minimal token, address to, uint256 value) internal {
-        _call(token, abi.encodeCall(IERC20Minimal.transfer, (to, value)));
+    function safeTransfer(address token, address to, uint256 value) internal returns (bool) {
+        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", to, value);
+        (bool success, bytes memory result) = token.call(data);
+        return success && (result.length == 0 || abi.decode(result, (bool)));
     }
 
-    function safeTransferFrom(IERC20Minimal token, address from, address to, uint256 value) internal {
-        _call(token, abi.encodeCall(IERC20Minimal.transferFrom, (from, to, value)));
+    function safeTransferFrom(address token, address from, address to, uint256 value) internal returns (bool) {
+        bytes memory data = abi.encodeWithSignature("transferFrom(address,address,uint256)", from, to, value);
+        (bool success, bytes memory result) = token.call(data);
+        return success && (result.length == 0 || abi.decode(result, (bool)));
     }
 
-    function forceApprove(IERC20Minimal token, address spender, uint256 value) internal {
-        bytes memory result = _call(token, abi.encodeCall(IERC20Minimal.approve, (spender, value)));
-        if (result.length == 0 || abi.decode(result, (bool))) return;
-
-        _call(token, abi.encodeCall(IERC20Minimal.approve, (spender, 0)));
-        _call(token, abi.encodeCall(IERC20Minimal.approve, (spender, value)));
+    function safeApprove(address token, address spender, uint256 value) internal returns (bool) {
+        bytes memory data = abi.encodeWithSignature("approve(address,uint256)", spender, value);
+        (bool success, bytes memory result) = token.call(data);
+        return success && (result.length == 0 || abi.decode(result, (bool)));
     }
 
-    function _call(IERC20Minimal token, bytes memory data) private returns (bytes memory result) {
-        (bool success, bytes memory returndata) = address(token).call(data);
-        if (!success || (returndata.length != 0 && !abi.decode(returndata, (bool)))) {
-            revert Web3SafeERC20__CallFailed();
-        }
-        return returndata;
+    function balanceOf(address token, address account) internal view returns (uint256) {
+        bytes memory data = abi.encodeWithSignature("balanceOf(address)", account);
+        (bool success, bytes memory result) = token.staticcall(data);
+        if (!success || result.length == 0) return 0;
+        return abi.decode(result, (uint256));
     }
 }
