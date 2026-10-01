@@ -1,0 +1,131 @@
+{
+  "name": "Web3 Solidity Libraries",
+  "description": "Production-grade Solidity libraries for Ethereum and Web3 contracts—security-first, DeFi-oriented, modular smart contract primitives.",
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "web3",
+    "smart-contracts",
+    "smart-contract-library",
+    "solidity-library",
+    "hardhat",
+    "defi",
+    "token",
+    "erc20",
+    "erc721",
+    "erc1155",
+    "governance",
+    "security",
+    "access-control",
+    "oracle",
+    "merkle",
+    "amm",
+    "dex",
+    "vesting",
+    "auction",
+    "bonding-curve",
+    "price-feed",
+    "order-book",
+    "fixed-point-arithmetic",
+    "bit-operations",
+    "array-utilities",
+    "token-swap",
+    "safe-transfer",
+    "permission-matrix",
+    "access-gate",
+    "dutch-auction",
+    "english-auction",
+    "sealed-bid-auction",
+    "vickrey-auction",
+    "cliff-vesting",
+    "token-vesting",
+    "web3js",
+    "ethereum-smart-contracts",
+    "blockchain",
+    "contract-security",
+    "production-grade"
+  ],
+  "topics": [
+    "solidity",
+    "ethereum",
+    "web3",
+    "smart-contracts",
+    "solidity-library",
+    "hardhat",
+    "defi",
+    "security",
+    "access-control",
+    "token-standards",
+    "erc20",
+    "erc721",
+    "governance",
+    "blockchain",
+    "web3-protocols"
+  ],
+  "categories": {
+    "Core Utilities": [
+      "Web3Math",
+      "Web3Array",
+      "Web3DynamicArray",
+      "Web3Strings",
+      "Web3Time",
+      "Web3Address",
+      "Web3BitOperations",
+      "Web3FixedPoint128"
+    ],
+    "Token & DeFi": [
+      "Web3SafeTransfer",
+      "Web3SafeERC20",
+      "Web3TokenSwap",
+      "Web3PriceFeed",
+      "Web3BondCurve",
+      "Web3OrderBook"
+    ],
+    "Access & Governance": [
+      "Web3AccessControl",
+      "Web3PermissionMatrix",
+      "Web3MerkleProof",
+      "Web3Auction",
+      "Web3VestingSchedule"
+    ]
+  },
+  "compatibilities": {
+    "solidity": "^0.8.24",
+    "hardhat": "^2.x",
+    "node": ">=18.0.0"
+  },
+  "deployment": {
+    "networks": [
+      "ethereum-mainnet",
+      "ethereum-sepolia",
+      "ethereum-goerli",
+      "polygon",
+      "arbitrum",
+      "optimism",
+      "base",
+      "avalanche",
+      "binance-smart-chain"
+    ],
+    "contract_type": "library"
+  },
+  "security": {
+    "audited": false,
+    "license": "GPL-2.0",
+    "formal_verification": false,
+    "fuzzing": false
+  },
+  "use_cases": [
+    "DeFi protocols",
+    "Token systems",
+    "Governance frameworks",
+    "NFT collections",
+    "Access control",
+    "Price feeds and oracles",
+    "Auction systems",
+    "Vesting schedules",
+    "Bonding curves",
+    "Order books",
+    "Merkle trees",
+    "Secure transfers"
+  ]
+}
