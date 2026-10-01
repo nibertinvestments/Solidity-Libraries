@@ -1,7 +1,7 @@
 {
   "name": "web3-solidity-libraries",
   "version": "1.0.0",
-  "description": "Web3-branded Solidity library database and reusable smart-contract utilities.",
+  "description": "Production-grade Solidity libraries for smart contracts, DeFi, token systems, governance, security, and Web3 protocols.",
   "scripts": {
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
@@ -9,12 +9,30 @@
   },
   "keywords": [
     "solidity",
-    "web3",
     "ethereum",
-    "hardhat",
+    "web3",
     "smart-contracts",
-    "libraries",
-    "security"
+    "smart-contract-library",
+    "solidity-library",
+    "hardhat",
+    "defi",
+    "token",
+    "erc20",
+    "erc721",
+    "erc1155",
+    "governance",
+    "security",
+    "access-control",
+    "oracle",
+    "merkle",
+    "amm",
+    "dex",
+    "vesting",
+    "auction",
+    "bonding-curve",
+    "web3js",
+    "ethereum-smart-contracts",
+    "blockchain"
   ],
   "license": "GPL-2.0",
   "devDependencies": {
